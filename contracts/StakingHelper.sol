@@ -82,19 +82,19 @@ interface IStaking {
 contract StakingHelper {
 
     address public immutable staking;
-    address public immutable OHM;
+    address public immutable SGT;
 
-    constructor ( address _staking, address _OHM ) {
+    constructor ( address _staking, address _SGT ) {
         require( _staking != address(0) );
         staking = _staking;
-        require( _OHM != address(0) );
-        OHM = _OHM;
+        require( _SGT != address(0) );
+        SGT = _SGT;
     }
 
-    function stake( uint _amount ) external {
-        IERC20( OHM ).transferFrom( msg.sender, address(this), _amount );
-        IERC20( OHM ).approve( staking, _amount );
-        IStaking( staking ).stake( _amount, msg.sender );
-        IStaking( staking ).claim( msg.sender );
+    function stake( uint _amount, address recipient ) external {
+        IERC20( SGT ).transferFrom( msg.sender, address(this), _amount );
+        IERC20( SGT ).approve( staking, _amount );
+        IStaking( staking ).stake( _amount, recipient );
+        IStaking( staking ).claim( recipient );
     }
 }

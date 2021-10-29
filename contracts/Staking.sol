@@ -18,6 +18,12 @@ library SafeMath {
 
         return c;
     }
+    function add32(uint32 a, uint32 b) internal pure returns (uint32) {
+        uint32 c = a + b;
+        require(c >= a, "SafeMath: addition overflow");
+
+        return c;
+    }
 
     /**
      * @dev Returns the subtraction of two unsigned integers, reverting on
@@ -225,8 +231,7 @@ library Address {
      *
      * IMPORTANT: because control is transferred to `recipient`, care must be
      * taken to not create reentrancy vulnerabilities. Consider using
-     * {ReentrancyGuard} or the
-     * https://solidity.readthedocs.io/en/v0.5.11/security-considerations.html#use-the-checks-effects-interactions-pattern[checks-effects-interactions pattern].
+     * {ReentrancyGuard}
      */
     function sendValue(address payable recipient, uint256 amount) internal {
         require(address(this).balance >= amount, "Address: insufficient balance");
@@ -244,8 +249,6 @@ library Address {
      * If `target` reverts with a revert reason, it is bubbled up by this
      * function (like regular Solidity function calls).
      *
-     * Returns the raw returned data. To convert to the expected return value,
-     * use https://solidity.readthedocs.io/en/latest/units-and-global-variables.html?highlight=abi.decode#abi-encoding-and-decoding-functions[`abi.decode`].
      *
      * Requirements:
      *
@@ -264,7 +267,11 @@ library Address {
      *
      * _Available since v3.1._
      */
-    function functionCall(address target, bytes memory data, string memory errorMessage) internal returns (bytes memory) {
+    function functionCall(
+        address target,
+        bytes memory data,
+        string memory errorMessage
+    ) internal returns (bytes memory) {
         return _functionCallWithValue(target, data, 0, errorMessage);
     }
 
@@ -289,7 +296,12 @@ library Address {
      *
      * _Available since v3.1._
      */
-    function functionCallWithValue(address target, bytes memory data, uint256 value, string memory errorMessage) internal returns (bytes memory) {
+    function functionCallWithValue(
+        address target, 
+        bytes memory data, 
+        uint256 value, 
+        string memory errorMessage
+    ) internal returns (bytes memory) {
         require(address(this).balance >= value, "Address: insufficient balance for call");
         require(isContract(target), "Address: call to non-contract");
 
@@ -298,7 +310,12 @@ library Address {
         return _verifyCallResult(success, returndata, errorMessage);
     }
 
-    function _functionCallWithValue(address target, bytes memory data, uint256 weiValue, string memory errorMessage) private returns (bytes memory) {
+    function _functionCallWithValue(
+        address target, 
+        bytes memory data, 
+        uint256 weiValue, 
+        string memory errorMessage
+    ) private returns (bytes memory) {
         require(isContract(target), "Address: call to non-contract");
 
         // solhint-disable-next-line avoid-low-level-calls
@@ -337,7 +354,11 @@ library Address {
      *
      * _Available since v3.3._
      */
-    function functionStaticCall(address target, bytes memory data, string memory errorMessage) internal view returns (bytes memory) {
+    function functionStaticCall(
+        address target, 
+        bytes memory data, 
+        string memory errorMessage
+    ) internal view returns (bytes memory) {
         require(isContract(target), "Address: static call to non-contract");
 
         // solhint-disable-next-line avoid-low-level-calls
@@ -361,7 +382,11 @@ library Address {
      *
      * _Available since v3.3._
      */
-    function functionDelegateCall(address target, bytes memory data, string memory errorMessage) internal returns (bytes memory) {
+    function functionDelegateCall(
+        address target, 
+        bytes memory data, 
+        string memory errorMessage
+    ) internal returns (bytes memory) {
         require(isContract(target), "Address: delegate call to non-contract");
 
         // solhint-disable-next-line avoid-low-level-calls
@@ -369,7 +394,11 @@ library Address {
         return _verifyCallResult(success, returndata, errorMessage);
     }
 
-    function _verifyCallResult(bool success, bytes memory returndata, string memory errorMessage) private pure returns(bytes memory) {
+    function _verifyCallResult(
+        bool success, 
+        bytes memory returndata, 
+        string memory errorMessage
+    ) private pure returns(bytes memory) {
         if (success) {
             return returndata;
         } else {
@@ -441,8 +470,13 @@ library SafeERC20 {
         _callOptionalReturn(token, abi.encodeWithSelector(token.approve.selector, spender, newAllowance));
     }
 
-    function safeDecreaseAllowance(IERC20 token, address spender, uint256 value) internal {
-        uint256 newAllowance = token.allowance(address(this), spender).sub(value, "SafeERC20: decreased allowance below zero");
+    function safeDecreaseAllowance(
+        IERC20 token, 
+        address spender, 
+        uint256 value
+    ) internal {
+        uint256 newAllowance = token.allowance(address(this), spender)
+            .sub(value, "SafeERC20: decreased allowance below zero");
         _callOptionalReturn(token, abi.encodeWithSelector(token.approve.selector, spender, newAllowance));
     }
 
@@ -515,7 +549,7 @@ contract Ownable is IOwnable {
     }
 }
 
-interface IsOHM {
+interface IsSGT {
     function rebase( uint256 ohmProfit_, uint epoch_) external returns (uint256);
 
     function circulatingSupply() external view returns (uint256);
@@ -537,19 +571,20 @@ interface IDistributor {
     function distribute() external returns ( bool );
 }
 
-contract OlympusStaking is Ownable {
+contract SGTStaking is Ownable {
 
     using SafeMath for uint256;
+    using SafeMath for uint32;
     using SafeERC20 for IERC20;
 
-    address public immutable OHM;
-    address public immutable sOHM;
+    address public immutable SGT;
+    address public immutable sSGT;
 
     struct Epoch {
-        uint length;
         uint number;
-        uint endBlock;
         uint distribute;
+        uint32 length;
+        uint32 endTime;
     }
     Epoch public epoch;
 
@@ -562,21 +597,21 @@ contract OlympusStaking is Ownable {
     uint public warmupPeriod;
     
     constructor ( 
-        address _OHM, 
-        address _sOHM, 
-        uint _epochLength,
+        address _SGT, 
+        address _sSGT, 
+        uint32 _epochLength,
         uint _firstEpochNumber,
-        uint _firstEpochBlock
+        uint32 _firstEpochTime
     ) {
-        require( _OHM != address(0) );
-        OHM = _OHM;
-        require( _sOHM != address(0) );
-        sOHM = _sOHM;
+        require( _SGT != address(0) );
+        SGT = _SGT;
+        require( _sSGT != address(0) );
+        sSGT = _sSGT;
         
         epoch = Epoch({
             length: _epochLength,
             number: _firstEpochNumber,
-            endBlock: _firstEpochBlock,
+            endTime: _firstEpochTime,
             distribute: 0
         });
     }
@@ -597,19 +632,19 @@ contract OlympusStaking is Ownable {
     function stake( uint _amount, address _recipient ) external returns ( bool ) {
         rebase();
         
-        IERC20( OHM ).safeTransferFrom( msg.sender, address(this), _amount );
+        IERC20( SGT ).safeTransferFrom( msg.sender, address(this), _amount );
 
         Claim memory info = warmupInfo[ _recipient ];
         require( !info.lock, "Deposits for account are locked" );
 
         warmupInfo[ _recipient ] = Claim ({
             deposit: info.deposit.add( _amount ),
-            gons: info.gons.add( IsOHM( sOHM ).gonsForBalance( _amount ) ),
+            gons: info.gons.add( IsSGT( sSGT ).gonsForBalance( _amount ) ),
             expiry: epoch.number.add( warmupPeriod ),
             lock: false
         });
         
-        IERC20( sOHM ).safeTransfer( warmupContract, _amount );
+        IERC20( sSGT ).safeTransfer( warmupContract, _amount );
         return true;
     }
 
@@ -621,7 +656,7 @@ contract OlympusStaking is Ownable {
         Claim memory info = warmupInfo[ _recipient ];
         if ( epoch.number >= info.expiry && info.expiry != 0 ) {
             delete warmupInfo[ _recipient ];
-            IWarmup( warmupContract ).retrieve( _recipient, IsOHM( sOHM ).balanceForGons( info.gons ) );
+            IWarmup( warmupContract ).retrieve( _recipient, IsSGT( sSGT ).balanceForGons( info.gons ) );
         }
     }
 
@@ -632,8 +667,8 @@ contract OlympusStaking is Ownable {
         Claim memory info = warmupInfo[ msg.sender ];
         delete warmupInfo[ msg.sender ];
 
-        IWarmup( warmupContract ).retrieve( address(this), IsOHM( sOHM ).balanceForGons( info.gons ) );
-        IERC20( OHM ).safeTransfer( msg.sender, info.deposit );
+        IWarmup( warmupContract ).retrieve( address(this), IsSGT( sSGT ).balanceForGons( info.gons ) );
+        IERC20( SGT ).safeTransfer( msg.sender, info.deposit );
     }
 
     /**
@@ -652,8 +687,8 @@ contract OlympusStaking is Ownable {
         if ( _trigger ) {
             rebase();
         }
-        IERC20( sOHM ).safeTransferFrom( msg.sender, address(this), _amount );
-        IERC20( OHM ).safeTransfer( msg.sender, _amount );
+        IERC20( sSGT ).safeTransferFrom( msg.sender, address(this), _amount );
+        IERC20( SGT ).safeTransfer( msg.sender, _amount );
     }
 
     /**
@@ -661,18 +696,18 @@ contract OlympusStaking is Ownable {
         @return uint
      */
     function index() public view returns ( uint ) {
-        return IsOHM( sOHM ).index();
+        return IsSGT( sSGT ).index();
     }
 
     /**
         @notice trigger rebase if epoch over
      */
     function rebase() public {
-        if( epoch.endBlock <= block.number ) {
+        if( epoch.endTime <= uint32(block.timestamp) ) {
 
-            IsOHM( sOHM ).rebase( epoch.distribute, epoch.number );
+            IsSGT( sSGT ).rebase( epoch.distribute, epoch.number );
 
-            epoch.endBlock = epoch.endBlock.add( epoch.length );
+            epoch.endTime = epoch.endTime.add32( epoch.length );
             epoch.number++;
             
             if ( distributor != address(0) ) {
@@ -680,7 +715,7 @@ contract OlympusStaking is Ownable {
             }
 
             uint balance = contractBalance();
-            uint staked = IsOHM( sOHM ).circulatingSupply();
+            uint staked = IsSGT( sSGT ).circulatingSupply();
 
             if( balance <= staked ) {
                 epoch.distribute = 0;
@@ -695,7 +730,7 @@ contract OlympusStaking is Ownable {
         @return uint
      */
     function contractBalance() public view returns ( uint ) {
-        return IERC20( OHM ).balanceOf( address(this) ).add( totalBonus );
+        return IERC20( SGT ).balanceOf( address(this) ).add( totalBonus );
     }
 
     /**
@@ -705,7 +740,7 @@ contract OlympusStaking is Ownable {
     function giveLockBonus( uint _amount ) external {
         require( msg.sender == locker );
         totalBonus = totalBonus.add( _amount );
-        IERC20( sOHM ).safeTransfer( locker, _amount );
+        IERC20( sSGT ).safeTransfer( locker, _amount );
     }
 
     /**
@@ -715,7 +750,7 @@ contract OlympusStaking is Ownable {
     function returnLockBonus( uint _amount ) external {
         require( msg.sender == locker );
         totalBonus = totalBonus.sub( _amount );
-        IERC20( sOHM ).safeTransferFrom( locker, address(this), _amount );
+        IERC20( sSGT ).safeTransferFrom( locker, address(this), _amount );
     }
 
     enum CONTRACTS { DISTRIBUTOR, WARMUP, LOCKER }
@@ -737,7 +772,7 @@ contract OlympusStaking is Ownable {
     }
     
     /**
-     * @notice set warmup period for new stakers
+     * @notice set warmup period in epoch's numbers for new stakers
      * @param _warmupPeriod uint
      */
     function setWarmup( uint _warmupPeriod ) external onlyManager() {
