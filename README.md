@@ -10,7 +10,7 @@
 | Staking |[0xb82aC36e9dF3c700F12ECF552F240BF4D7B7a212](https://bscscan.com/address/0xb82aC36e9dF3c700F12ECF552F240BF4D7B7a212)| Main Staking contract responsible for calling rebase every 8 hours|
 |StakingHelper  |[0xb833FF51d277065b1Fd2d729835c2302fc2Fe5D0](https://bscscan.com/address/0xb833FF51d277065b1Fd2d729835c2302fc2Fe5D0)| Helper Contract to Stake with 0 warmup |
 |DAO            |[0xD45c0F6Fc5082e8D3FfB81df26F9d2C83a3bF01e](https://bscscan.com/address/0xD45c0F6Fc5082e8D3FfB81df26F9d2C83a3bF01e)|Storage Wallet for DAO under MS |
-|Staking Warm Up|[0xdd06743C82c2D8cAD4e975487A8c02AC5FD9E1B5](https://bscscan.com/address/0xdd06743C82c2D8cAD4e975487A8c02AC5FD9E1B5)| Instructs the Staking contract when a user can claim sOHM |
+|Staking Warm Up|[0xdd06743C82c2D8cAD4e975487A8c02AC5FD9E1B5](https://bscscan.com/address/0xdd06743C82c2D8cAD4e975487A8c02AC5FD9E1B5)| Instructs the Staking contract when a user can claim GAME |
 
 
 **Bonds**
